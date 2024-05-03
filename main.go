@@ -1,18 +1,20 @@
 package main
 
 import (
-	"github.com/gdamore/tcell"
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
 	"time"
+
+	"github.com/gdamore/tcell"
 )
 
 const (
-	up = iota
-	down
-	left
-	right
+	up    = 1
+	down  = -1
+	left  = 2
+	right = -2
 )
 
 type Game struct {
@@ -40,25 +42,45 @@ func (g *Game) tick() {
 }
 
 func (g *Game) listenKeys(s tcell.Screen) {
+	direction := g.direction
+
 	for {
 		ev := s.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
+			// arrow keys
 			switch ev.Key() {
 			case tcell.KeyUp:
-				g.direction = up
+				direction = up
 			case tcell.KeyDown:
-				g.direction = down
+				direction = down
 			case tcell.KeyLeft:
-				g.direction = left
+				direction = left
 			case tcell.KeyRight:
-				g.direction = right
+				direction = right
+
 			case tcell.KeyCtrlC:
 				s.Fini()
 				log.Printf("Screen size: %d x %d", g.width, g.height)
 				os.Exit(0)
 				return
 			}
+
+			// vim keys
+			switch ev.Rune() {
+			case 'h':
+				direction = left
+			case 'j':
+				direction = down
+			case 'k':
+				direction = up
+			case 'l':
+				direction = right
+			}
+		}
+
+		if (direction + g.direction) != 0 {
+			g.direction = direction
 		}
 	}
 }
@@ -131,7 +153,6 @@ type Point struct {
 }
 
 const delay = 80 * time.Millisecond
-const looseMessage = "You loose"
 
 func main() {
 	screen := setupScreen()
@@ -150,9 +171,7 @@ func main() {
 		time.Sleep(delay)
 
 		if game.over {
-			screen.Clear()
-			drawLoose(screen)
-			screen.Show()
+			fmt.Println("You loose !")
 			os.Exit(0)
 		}
 	}
@@ -172,22 +191,13 @@ func setupScreen() tcell.Screen {
 }
 
 func drawSnake(s tcell.Screen, snake *Snake) {
-	style := tcell.StyleDefault.Foreground(tcell.Color105).Background(tcell.Color105)
+	bodyStyle := tcell.StyleDefault.Foreground(tcell.Color105).Background(tcell.Color105)
 	for _, p := range snake.body {
-		s.SetContent(p.x, p.y, '.', nil, style)
+		s.SetContent(p.x, p.y, '.', nil, bodyStyle)
 	}
 }
 
 func drawFood(s tcell.Screen, p Point) {
 	style := tcell.StyleDefault.Foreground(tcell.Color126).Background(tcell.Color126)
 	s.SetContent(p.x, p.y, 'o', nil, style)
-}
-
-func drawLoose(s tcell.Screen) {
-	style := tcell.StyleDefault.Foreground(tcell.Color119).Background(tcell.Color90)
-	startPoint := Point{x: 10, y: 10}
-
-	for i, char := range []rune(looseMessage) {
-		s.SetContent(startPoint.x+i, startPoint.y, char, nil, style)
-	}
 }
