@@ -86,7 +86,12 @@ func (g *Game) listenKeys(s tcell.Screen) {
 }
 
 func newGame(width, height int) Game {
-	snake := Snake{body: []Point{{x: 10, y: 10}, {x: 11, y: 10}, {x: 12, y: 10}}}
+	snake := Snake{body: []Point{}}
+
+	for i := 0; i < 10; i++ {
+		snake.body = append(snake.body, Point{x: 10 - i, y: 10})
+	}
+
 	game := Game{snake: &snake, direction: right, width: width, height: height}
 	game.placeFood()
 
